@@ -65,7 +65,6 @@ class Conexao:
 
     def _exemplo_timer(self):
         self.tempo = None
-        dados = self.concentrador.pop(0)
         self.concentrador.insert(0, dados)
         self.servidor.rede.enviar(dados,self.id_conexao[2])
         if self.timer != None:
