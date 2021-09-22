@@ -33,8 +33,8 @@ class Servidor:
         id_conexao = (src_addr, src_port, dst_addr, dst_port)
 
         if (flags & FLAGS_SYN) == FLAGS_SYN:
-               sequencia_serv = random.randint(0, 0xFFFF)
-               segmento_serv = make_header(self.porta, src_port, sequencia_serv, seq_no+1, FLAGS_SYN | FLAGS_ACK)
+            sequencia_serv = random.randint(0, 0xFFFF)
+            segmento_serv = make_header(self.porta, src_port, sequencia_serv, seq_no+1, FLAGS_SYN | FLAGS_ACK)
             self.rede.enviar(fix_checksum(segmento_serv,src_addr, dst_addr),src_addr)   
             conexao = self.conexoes[id_conexao] = Conexao(self, id_conexao, sequencia_serv, seq_no+1)
             # TODO: você precisa fazer o handshake aceitando a conexão. Escolha se você acha melhor
