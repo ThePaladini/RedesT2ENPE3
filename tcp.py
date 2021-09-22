@@ -55,14 +55,24 @@ class Conexao:
         self.id_conexao = id_conexao
         self.callback = None
         self.sequencia = sequencia + 1
+        self.tempo= None
+        self.funcionando = False
+        self.concentrador = []
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)  
         self.ultima_seq = ultima_seq
         self.buffer = b''
         self.ligado = True
 
     def _exemplo_timer(self):
-        # Esta função é só um exemplo e pode ser removida
-        print('Este é um exemplo de como fazer um timer')
+        self.tempo = None
+        dados = self.concentrador.pop(0)
+        self.concentrador.insert(0, dados)
+        self.servidor.rede.enviar(dados,self.id_conexao[2])
+        if self.timer != None:
+            self.funcionando = False
+            self.timer.cancel()
+            self.timer = None
+        self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)    
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
