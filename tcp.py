@@ -50,11 +50,11 @@ class Servidor:
 
 
 class Conexao:
-    def __init__(self, servidor,sequencia ,id_conexao,ultima_seq):
+    def __init__(self, servidor,id_conexao,sequencia,ultima_seq):
         self.servidor = servidor
         self.id_conexao = id_conexao
         self.callback = None
-        self.sequencia = sequencia+1
+        self.sequencia = sequencia + 1
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)  
         self.ultima_seq = ultima_seq
         self.buffer = b''
