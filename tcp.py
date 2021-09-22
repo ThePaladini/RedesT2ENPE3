@@ -93,7 +93,7 @@ class Conexao:
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
             self.servidor.rede.enviar(fix_checksum(segmento_serv+dados, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
         else:
-            for i in range(aux):
+            for i in range(dados//MSS):
                 payload = dados[:MSS]
                 segmento_serv=make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia + len(payload), self.ultima_seq, FLAGS_ACK)
                 self.servidor.rede.enviar(fix_checksum(segmento_serv + payload, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
