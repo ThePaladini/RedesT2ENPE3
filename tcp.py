@@ -65,7 +65,7 @@ class Conexao:
         self.ligado = True
 
     def _exemplo_timer(self):
-          
+    
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
@@ -93,7 +93,6 @@ class Conexao:
 
     def enviar(self, dados):
         aux = len(dados)/MSS
-        mandador = make_header(self.id_conexao[1], self.id_conexao[3], self.sequenciaanterior, self.sequencianova, FLAGS_ACK)
         if aux <= 1:
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
             self.servidor.rede.enviar(fix_checksum(segmento_serv+dados, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
