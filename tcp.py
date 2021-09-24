@@ -60,17 +60,15 @@ class Conexao:
         self.concentrador = []
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)  
         self.ultima_seq = ultima_seq
-        self.send = sequencia
         self.buffer = b''
         self.ligado = True
 
     def _exemplo_timer(self):
-    
+
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
             return
-
         if seq_no == self.ultima_seq and payload:
             self.ultima_seq = seq_no + len(payload)
             self.buffer = self.buffer + payload
@@ -102,8 +100,7 @@ class Conexao:
                 segmento_serv=make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia + len(payload), self.ultima_seq, FLAGS_ACK)
                 self.servidor.rede.enviar(fix_checksum(segmento_serv + payload, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
                 self.sequencia = self.sequencia + len(payload)
-                dados = dados[MSS:] 
-       
+                dados = dados[MSS:]    
 
     def fechar(self):
         segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK | FLAGS_FIN)
