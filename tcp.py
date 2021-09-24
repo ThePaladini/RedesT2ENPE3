@@ -60,58 +60,15 @@ class Conexao:
         self.concentrador = []
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)  
         self.ultima_seq = ultima_seq
-        self.send = sequencia
         self.buffer = b''
         self.ligado = True
 
     def _exemplo_timer(self):
-        self.tempo = None
-        self.concentrador.insert(0, dados)
-        self.servidor.rede.enviar(dados,self.id_conexao[2])
-        if self.timer != None:
-            self.funcionando = False
-            self.timer.cancel()
-            self.timer = None
-        self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)    
+
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
             return
-        if (seq_no == self.sequencia and payload):
-            if(seq_no > self.send) and ((flags & FLAGS_ACK)==FLAGS_ACK):
-                if len(self.concentrador)>0:
-                    self.concentrador.pop(0)
-                    if len(self.concentrador)==0:
-                        if self.timer:
-                            self.timer.cancel()
-                            self.timer = None
-                            self.funcionando=False
-                    else:
-                        if self.timer:
-                            self.timer.cancel()
-                            self.timer = None
-                            self.funcionando = False
-                        self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer) 
-            self.timer = None
-        else:
-            if (seq_no > self.send) and ((flags & FLAGS_ACK) == FLAGS_ACK):
-                if len(self.concentrador) > 0:
-                    self.concentrador.pop(0)
-                    if len(self.concentrador) == 0:
-                        print("timer cancelado")
-                        if self.timer:
-                            self.timer.cancel()
-                            self.timer = None
-                            self.funcionando = False
-                        else:
-                            if self.timer:
-                                self.timer.cancel()
-                                self.timer = None
-                                self.funcionando = False
-                            self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-                self.sequenciaanterior = ack_no
-
-                        
         if seq_no == self.ultima_seq and payload:
             self.ultima_seq = seq_no + len(payload)
             self.buffer = self.buffer + payload
@@ -134,34 +91,16 @@ class Conexao:
 
     def enviar(self, dados):
         aux = len(dados)/MSS
-        mandador = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK)
         if aux <= 1:
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
             self.servidor.rede.enviar(fix_checksum(segmento_serv+dados, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
-            dados = mandador + dados
         else:
             for i in range(len(dados)//MSS):
                 payload = dados[:MSS]
                 segmento_serv=make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia + len(payload), self.ultima_seq, FLAGS_ACK)
                 self.servidor.rede.enviar(fix_checksum(segmento_serv + payload, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
                 self.sequencia = self.sequencia + len(payload)
-                self.buffer = dados[MSS:]
-                dados = mandador + dados[:MSS] 
-        dados = fix_checksum(dados, self.id_conexao[0], self.id_conexao[2])
-        self.servidor.rede.enviar(dados, self.id_conexao[2])
-        self.concentrador.append(dados)
-        
-        self.ultima_seq += len(dados) - 20
-
-        if not self.funcionando:
-            if self.timer:
-                self.timer.cancel()
-                self.timer = None
-                self.timerligado = False
-            self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-
-        if len(self.buffer) != 0:
-            self.enviar(self.buffer)           
+                dados = dados[MSS:]    
 
     def fechar(self):
         segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK | FLAGS_FIN)
