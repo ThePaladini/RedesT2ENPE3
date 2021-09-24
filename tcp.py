@@ -157,8 +157,8 @@ class Conexao:
                 self.timerligado = False
             self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
 
-        if len(buffer) != 0:
-            self.enviar(buffer)           
+        if len(self.buffer) != 0:
+            self.enviar(self.buffer)           
 
     def fechar(self):
         segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK | FLAGS_FIN)
