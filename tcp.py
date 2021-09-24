@@ -65,14 +65,7 @@ class Conexao:
         self.ligado = True
 
     def _exemplo_timer(self):
-        self.tempo = None
-        self.concentrador.insert(0, dados)
-        self.servidor.rede.enviar(dados,self.id_conexao[2])
-        if self.timer != None:
-            self.funcionando = False
-            self.timer.cancel()
-            self.timer = None
-        self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)    
+          
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
