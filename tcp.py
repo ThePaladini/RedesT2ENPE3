@@ -134,16 +134,19 @@ class Conexao:
 
     def enviar(self, dados):
         aux = len(dados)/MSS
+        mandador = make_header(self.id_conexao[1], self.id_conexao[3], self.sequenciaanterior, self.sequencianova, FLAGS_ACK)
         if aux <= 1:
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
             self.servidor.rede.enviar(fix_checksum(segmento_serv+dados, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
+            dados = mandador + dados
         else:
             for i in range(len(dados)//MSS):
                 payload = dados[:MSS]
                 segmento_serv=make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia + len(payload), self.ultima_seq, FLAGS_ACK)
                 self.servidor.rede.enviar(fix_checksum(segmento_serv + payload, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
                 self.sequencia = self.sequencia + len(payload)
-                dados = dados[MSS:] 
+                self.buffer = dados[MSS:]
+                dados = mandador + dados[:MSS] 
         dados = fix_checksum(dados, self.id_conexao[0], self.id_conexao[2])
         self.servidor.rede.enviar(dados, self.id_conexao[2])
         self.concentrador.append(dados)
