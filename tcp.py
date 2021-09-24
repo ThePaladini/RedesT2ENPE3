@@ -116,7 +116,7 @@ class Conexao:
                                 self.timer = None
                                 self.liga = False
                             self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-                self.sequenciaanterior = ack_no
+
 
         elif(flags & FLAGS_FIN) ==  FLAGS_FIN:
             self.callback(self, b'')
