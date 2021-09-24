@@ -100,12 +100,7 @@ class Conexao:
             self.callback(self, payload)
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
             self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0],self.id_conexao[2]),self.id_conexao[0]) 
-        elif(flags & FLAGS_FIN) ==  FLAGS_FIN:
-            self.callback(self, b'')
-            self.ultima_seq = self.ultima_seq+1
-            segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
-            self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[0])
-            self.ligado = False            
+        
         else:
             if (seq_no > self.send) and ((flags & FLAGS_ACK) == FLAGS_ACK):
                     if len(self.concat) > 0:
@@ -122,7 +117,14 @@ class Conexao:
                                 self.timer = None
                                 self.liga = False
                             self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
+        
 
+        if(flags & FLAGS_FIN) ==  FLAGS_FIN:
+            self.callback(self, b'')
+            self.ultima_seq = self.ultima_seq+1
+            segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
+            self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[0])
+            self.ligado = False    
     
 
     def registrar_recebedor(self, callback):
