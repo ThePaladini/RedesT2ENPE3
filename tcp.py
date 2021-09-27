@@ -33,8 +33,8 @@ class Servidor:
         id_conexao = (src_addr, src_port, dst_addr, dst_port)
 
         if (flags & FLAGS_SYN) == FLAGS_SYN:
-            sequencia_serv=int.from_bytes(urandom(4), byteorder)
-            ack_no += seq_no + 1
+            sequencia_serv = random.randint(0, 0xFFFF)
+            ack_no = ack_no +  seq_no + 1
             segmento_serv = make_header(dst_port, src_port, sequencia_serv, ack_no, FLAGS_SYN | FLAGS_ACK)
             self.rede.enviar(fix_checksum(segmento_serv, dst_addr, src_addr), src_addr)
             conexao = self.conexoes[id_conexao] = Conexao(self, id_conexao, seq_no, ack_no + 1)
@@ -72,7 +72,6 @@ class Conexao:
             self.timer = None
             self.t_ligado = False
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-        print('Este é um exemplo de como fazer um timer')
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if (self.ligado):
@@ -134,8 +133,9 @@ class Conexao:
         self.callback = callback
 
     def enviar(self, dados):
-        buffers = b''
-        if len(dados) <= MSS:
+        buffers = self.buffer
+        aux = len(dados)
+        if aux <= MSS:
             dados = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK) + dados
         else:
             buffers = dados[MSS:]
@@ -144,7 +144,7 @@ class Conexao:
         dados = fix_checksum(dados, self.id_conexao[0], self.id_conexao[2])
         self.servidor.rede.enviar(dados, self.id_conexao[2])
         self.concat.append(dados)
-        self.ultima_seq = self.ultima_seq + len(dados) - 20
+        self.ultima_seq = self.ultima_seq + aux - 20
 
         if not self.t_ligado:
             if self.timer:
