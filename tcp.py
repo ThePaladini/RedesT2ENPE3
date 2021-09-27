@@ -104,7 +104,7 @@ class Conexao:
                 segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
                 self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0],self.id_conexao[2]),self.id_conexao[0]) 
         else:
-            if (seq_no > self.sendbase) and ((flags & FLAGS_ACK) == FLAGS_ACK):
+            if (seq_no > self.send) and ((flags & FLAGS_ACK) == FLAGS_ACK):
                 if len(self.concat) > 0:
                     self.concat.pop(0)
                     if len(self.concat) == 0:
