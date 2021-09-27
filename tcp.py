@@ -148,7 +148,6 @@ class Conexao:
 
         if len(self.buffer) != 0:
             self.enviar(self.buffer)
-
     def fechar(self):
         segmento_serv = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK | FLAGS_FIN)
         self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
