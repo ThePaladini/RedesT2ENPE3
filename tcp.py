@@ -13,6 +13,10 @@ class Servidor:
         self.rede.registrar_recebedor(self._rdt_rcv)
 
     def registrar_monitor_de_conexoes_aceitas(self, callback):
+        """
+        Usado pela camada de aplicação para registrar uma função para ser chamada
+        sempre que uma nova conexão for aceita
+        """
         self.callback = callback
 
     def _rdt_rcv(self, src_addr, dst_addr, segment):
@@ -29,14 +33,15 @@ class Servidor:
         id_conexao = (src_addr, src_port, dst_addr, dst_port)
 
         if (flags & FLAGS_SYN) == FLAGS_SYN:
-            conexao = self.conexoes[id_conexao] = Conexao(self, id_conexao, seq_no, ack_no + 1)
-            seqnorand=int.from_bytes(urandom(4), byteorder)
+            sequencia_serv=int.from_bytes(urandom(4), byteorder)
             ack_no += seq_no + 1
             segmento_serv = make_header(dst_port, src_port, seqnorand, ack_no, FLAGS_SYN | FLAGS_ACK)
             self.rede.enviar(fix_checksum(segmento_serv, dst_addr, src_addr), src_addr)
+            conexao = self.conexoes[id_conexao] = Conexao(self, id_conexao, seq_no, ack_no + 1)
             if self.callback:
                 self.callback(conexao)
         elif id_conexao in self.conexoes:
+            # Passa para a conexão adequada se ela já estiver estabelecida
             self.conexoes[id_conexao]._rdt_rcv(seq_no, ack_no, flags, payload)
         else:
             print('%s:%d -> %s:%d (pacote associado a conexão desconhecida)' %
@@ -52,11 +57,11 @@ class Conexao:
         self.send = sequencia
         self.ultima_seq = ultima_seq
         self.ligado = True
-        self.buffer = b''
         self.t_ligado = False
         self.concat = []
         self.timer = None 
-        
+        self.buffer = b''
+
     def _exemplo_timer(self):
         self.timer = None
         dados = self.concat.pop(0)
@@ -67,7 +72,7 @@ class Conexao:
             self.timer = None
             self.t_ligado = False
         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-
+        print('Este é um exemplo de como fazer um timer')
 
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if (self.ligado):
@@ -92,8 +97,8 @@ class Conexao:
                 self.sequencia = self.sequencia + len(payload)
                 self.ultima_seq = ack_no
                 if len(payload) > 0:
-                    segmento_serv = make_header(self.id_conexao[1], self.id_conexao[3], ack_no, self.sequencia, FLAGS_ACK)
-                    self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
+                    condensador = make_header(self.id_conexao[1], self.id_conexao[3], ack_no, self.sequencia, FLAGS_ACK)
+                    self.servidor.rede.enviar(fix_checksum(condensador, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
             else:
                 if (seq_no > self.send) and ((flags & FLAGS_ACK) == FLAGS_ACK):
                     if len(self.concat) > 0:
@@ -111,13 +116,15 @@ class Conexao:
                                 self.t_ligado = False
                             self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
                 self.ultima_seq = ack_no
+
             if (flags & FLAGS_FIN) == FLAGS_FIN:
                 self.callback(self, b'')
                 self.sequencia = self.sequencia + 1
                 self.ultima_seq = ack_no
-                segmento_serv = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK)
-                self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
+                condensador2 = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK)
+                self.servidor.rede.enviar(fix_checksum(condensador2, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
                 self.ligado = False
+
     
     def registrar_recebedor(self, callback):
         """
@@ -127,18 +134,18 @@ class Conexao:
         self.callback = callback
 
     def enviar(self, dados):
-        aux = len(dados)
-        self.buffer = b''
-        segmento_serv = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK)
+        buffers = b''
         if len(dados) <= MSS:
-            dados = segmento_serv + dados
+            dados = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK) + dados
         else:
-            self.buffer = dados[MSS:]
-            dados = segmento_serv + dados[:MSS]
+            buffers = dados[MSS:]
+            dados = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK) + dados[:MSS]
+
         dados = fix_checksum(dados, self.id_conexao[0], self.id_conexao[2])
         self.servidor.rede.enviar(dados, self.id_conexao[2])
         self.concat.append(dados)
-        self.ultima_seq = self.ultima_seq + aux - 20
+        self.ultima_seq = self.ultima_seq + len(dados) - 20
+
         if not self.t_ligado:
             if self.timer:
                 self.timer.cancel()
@@ -146,8 +153,9 @@ class Conexao:
                 self.t_ligado = False
             self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
 
-        if len(self.buffer) != 0:
-            self.enviar(self.buffer)
+        if len(buffers) != 0:
+            self.enviar(buffers)
+
     def fechar(self):
-        segmento_serv = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK | FLAGS_FIN)
-        self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
+        condensador3 = make_header(self.id_conexao[1], self.id_conexao[3], self.ultima_seq, self.sequencia, FLAGS_ACK | FLAGS_FIN)
+        self.servidor.rede.enviar(fix_checksum(condensador3, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
