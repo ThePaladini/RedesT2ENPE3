@@ -80,7 +80,7 @@ class Conexao:
     def _rdt_rcv(self, seq_no, ack_no, flags, payload):
         if self.ligado == False:
             return
-        if seq_no == self.ultima_seq and payload:
+        if seq_no == self.sequencia and payload:
             if(seq_no > self.send) and ((flags & FLAGS_ACK)==FLAGS_ACK):
                 if len(self.concat) > 0:
                     self.concat.pop(0)
@@ -101,8 +101,8 @@ class Conexao:
             self.ultima_seq = ack_no
             self.buffer = self.buffer + payload
             if len(payload) > 0:
-                segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
-                self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0],self.id_conexao[2]),self.id_conexao[0]) 
+                segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ack_no, FLAGS_ACK)
+                self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0],self.id_conexao[2]),self.id_conexao[2]) 
         else:
             if (seq_no > self.send) and ((flags & FLAGS_ACK) == FLAGS_ACK):
                 if len(self.concat) > 0:
@@ -119,13 +119,13 @@ class Conexao:
                             self.timer = None
                             self.timerligado = False
                         self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
-                self.ultima_seq = ack_no                
+            self.ultima_seq = ack_no                
         if(flags & FLAGS_FIN) ==  FLAGS_FIN:
             self.callback(self, b'')
             self.sequencia = self.sequencia+1
             self.ultima_seq = ack_no
             segmento_serv = make_header(self.id_conexao[3], self.id_conexao[1], self.sequencia, self.ultima_seq, FLAGS_ACK)
-            self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[0])
+            self.servidor.rede.enviar(fix_checksum(segmento_serv, self.id_conexao[0], self.id_conexao[2]), self.id_conexao[2])
             self.ligado = False        
 
     def registrar_recebedor(self, callback):
@@ -146,7 +146,7 @@ class Conexao:
         dados = fix_checksum(dados, self.id_conexao[0],self.id_conexao[2])
         self.servidor.rede.enviar(dados, self.id_conexao[2])
         self.concat.append(dados)  
-        self.ultima_seq = self.ultima_seq + len(dados) - 20
+        self.ultima_seq = self.ultima_seq + aux - 20
         if not self.t_ligado:
             if self.timer:
                 self.timer.cancel()
