@@ -91,10 +91,10 @@ class Conexao:
                             self.t_ligado = False
                     else:
                         if self.timer:
-                        self.timer.cancel()    
-                        self.timer = None
-                        self.t_ligado = False
-                    self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
+                            self.timer.cancel()    
+                            self.timer = None
+                            self.t_ligado = False
+                        self.timer = asyncio.get_event_loop().call_later(1, self._exemplo_timer)
             self.timer = None
             self.callback(self, payload)        
             self.sequencia = self.sequencia + len(payload)                    
