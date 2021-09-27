@@ -35,7 +35,7 @@ class Servidor:
         if (flags & FLAGS_SYN) == FLAGS_SYN:
             sequencia_serv=int.from_bytes(urandom(4), byteorder)
             ack_no += seq_no + 1
-            segmento_serv = make_header(dst_port, src_port, seqnorand, ack_no, FLAGS_SYN | FLAGS_ACK)
+            segmento_serv = make_header(dst_port, src_port, sequencia_serv, ack_no, FLAGS_SYN | FLAGS_ACK)
             self.rede.enviar(fix_checksum(segmento_serv, dst_addr, src_addr), src_addr)
             conexao = self.conexoes[id_conexao] = Conexao(self, id_conexao, seq_no, ack_no + 1)
             if self.callback:
