@@ -33,7 +33,7 @@ class Servidor:
         id_conexao = (src_addr, src_port, dst_addr, dst_port)
 
         if (flags & FLAGS_SYN) == FLAGS_SYN:
-            sequencia_serv = int.from_bytes(urandom(4), byteorder)
+            sequencia_serv = random.randint(0, 0xFFFF)
             ack_no = ack_no +  seq_no + 1
             segmento_serv = make_header(dst_port, src_port, sequencia_serv, ack_no, FLAGS_SYN | FLAGS_ACK)
             self.rede.enviar(fix_checksum(segmento_serv, dst_addr, src_addr), src_addr)
